@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clip-Werkstatt</title>
+<meta name="description" content="Fotos und Videos zu kurzen Clips mit Text, Kommentar und Musik für Social Media verarbeiten.">
+<meta name="theme-color" content="#12705F">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clips">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Caveat:wght@700&family=Fraunces:ital,wght@1,600&display=swap">
+<style>
+/* Layout: Schnittplatz – links der Monitor mit Transport (bleibt stehen), rechts die Arbeitsschritte als Reiter */
+:root{
+  --bg:#ECEFEA; --surface:#F8FAF6; --ink:#1A211E; --muted:#5A665F; --line:#D2D9D2;
+  --accent:#12705F; --accent-ink:#FFFFFF; --accent-soft:#D6EAE3; --monitor:#111513; --rec:#C8412B;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111513; --surface:#191F1C; --ink:#E5EBE7; --muted:#96A29B; --line:#2B3430;
+  --accent:#4CC0A5; --accent-ink:#08130F; --accent-soft:#1D3530; --monitor:#090C0B; --rec:#E8664F; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#111513; --surface:#191F1C; --ink:#E5EBE7; --muted:#96A29B; --line:#2B3430;
+  --accent:#4CC0A5; --accent-ink:#08130F; --accent-soft:#1D3530; --monitor:#090C0B; --rec:#E8664F; color-scheme:dark }
+
+html,body{background:var(--bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{margin:0;color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:calc(20px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px))}
+.btn.live{background:var(--rec);border-color:var(--rec);color:#fff}
+.rec-state{font:500 13px var(--f-mono);color:var(--rec);font-variant-numeric:tabular-nums}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.rec-dot{width:12px;height:12px;border-radius:50%;background:var(--rec);display:inline-block}
+.recording .rec-dot{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.tag{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+.stage{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:880px){.stage{position:static}}
+.monitor{background:var(--monitor);border-radius:14px;padding:34px 16px 16px;display:flex;justify-content:center;align-items:center;position:relative;min-height:260px}
+.screen{position:relative;display:inline-block;line-height:0;max-width:100%}
+.screen canvas{max-width:100%;max-height:min(66vh,700px);width:auto;height:auto;display:block;border-radius:4px;background:#000}
+.safe{position:absolute;inset:0;pointer-events:none}
+.safe i{position:absolute;border:1.5px dashed rgba(255,255,255,.55);border-radius:4px}
+.safe b{position:absolute;font:500 10px var(--f-mono);color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase;line-height:1.2}
+.badge{position:absolute;left:14px;top:12px;font:500 11px var(--f-mono);color:#AEB8B2;letter-spacing:.05em}
+.transport{display:flex;align-items:center;gap:12px}
+.play{width:46px;height:46px;flex:none;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer}
+.play svg{width:18px;height:18px}
+#scrub{flex:1;min-width:0;accent-color:var(--accent)}
+.tc{font:500 13px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.stage-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;color:var(--muted);font-size:13.5px}
+.check{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0;overflow:hidden}
+.steps{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);padding:6px 6px 0;scrollbar-width:none}
+.steps button{border:0;background:none;padding:10px 14px 12px;cursor:pointer;color:var(--muted);font-weight:600;white-space:nowrap;border-bottom:2.5px solid transparent;display:flex;gap:8px;align-items:baseline}
+.steps button span{font:500 11px var(--f-mono);opacity:.8}
+.steps button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab{padding:20px;display:flex;flex-direction:column;gap:22px}
+h2{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:700}
+.sub{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:62ch}
+.group{display:flex;flex-direction:column;gap:12px}
+
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:18px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop p{margin:0;color:var(--muted);font-size:14px;flex:1;min-width:180px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:disabled{opacity:.5;cursor:default}
+.btn.small{padding:6px 10px;font-size:13.5px}
+.btn.danger{color:var(--rec)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+input[type=file]{display:none}
+
+.bin{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:10px}
+.tile{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;background:var(--line);padding:0}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile.sel{border-color:var(--accent)}
+.tile .num{position:absolute;left:4px;top:4px;font:500 11px var(--f-mono);background:rgba(10,14,12,.72);color:#fff;border-radius:4px;padding:1px 5px}
+.tile .kind{position:absolute;right:4px;bottom:4px;font:500 10.5px var(--f-mono);background:rgba(10,14,12,.72);color:#fff;border-radius:4px;padding:1px 5px}
+.tile.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+.bin-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;color:var(--muted);font-size:13.5px}
+
+.editor{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.ed-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.ed-head strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ed-actions{display:flex;gap:6px}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field>span{display:flex;justify-content:space-between;gap:12px;font-weight:600;font-size:14px}
+.field output{font:500 12.5px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.field input[type=range]{accent-color:var(--accent);width:100%}
+.field input[type=text],.field textarea,.field select{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;width:100%}
+.field textarea{resize:vertical;min-height:84px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:500;font-size:14px}
+.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chips button small{display:block;font:500 10.5px var(--f-mono);opacity:.75}
+.swatch{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);cursor:pointer;padding:0}
+.swatch[aria-pressed="true"]{outline:2.5px solid var(--accent);outline-offset:2px}
+
+.layouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
+.layouts button{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:center;font-size:12.5px}
+.layouts button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent) inset}
+.lay{width:30px;height:46px;display:grid;gap:2px}
+.lay i{background:var(--muted);border-radius:2px;opacity:.7}
+
+.tracks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.tracks button{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.tracks button strong{font-weight:600}
+.tracks button span{font-size:12.5px;color:var(--muted)}
+.tracks button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent) inset}
+.note{font-size:13.5px;color:var(--muted);margin:0;max-width:64ch}
+.note a{color:var(--accent)}
+.filechip{display:inline-flex;align-items:center;gap:8px;font:500 12.5px var(--f-mono);background:var(--accent-soft);border-radius:6px;padding:4px 8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+
+.prog{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.prog div{height:100%;width:0;background:var(--rec);transition:width .2s linear}
+.result video{width:100%;max-height:420px;background:#000;border-radius:8px}
+.platforms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.plat{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.plat strong{font-family:var(--f-display);font-weight:700}
+.plat span{font-size:13px;color:var(--muted)}
+.plat a{color:var(--accent);font-weight:600;font-size:14px;margin-top:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom, 0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;max-width:min(92vw,520px);font-size:14px;z-index:20}
+#vids{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.recording .rec-dot{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand"><span class="rec-dot" aria-hidden="true"></span>Clip-Werkstatt</div>
+    <p class="tag">Fotos und Videos rein, Musik drunter, als kurzen Clip für Reels, TikTok und Shorts speichern.</p>
+  </header>
+
+  <main class="grid">
+    <section class="stage" aria-label="Vorschau">
+      <div class="monitor">
+        <span class="badge" id="fmtBadge"></span>
+        <div class="screen"><canvas id="cv" width="1080" height="1920"></canvas><div class="safe" id="safe" hidden></div></div>
+      </div>
+      <div class="transport">
+        <button class="play" id="playBtn" aria-label="Abspielen"></button>
+        <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Zeitleiste">
+        <span class="tc" id="tc">00:00:00</span>
+      </div>
+      <div class="stage-foot">
+        <span id="sumLine"></span>
+        <label class="check"><input type="checkbox" id="safeToggle"> Sicherheitsbereich zeigen</label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <nav class="steps" role="tablist" aria-label="Arbeitsschritte">
+        <button role="tab" data-tab="media" aria-selected="true"><span>1</span>Medien</button>
+        <button role="tab" data-tab="style" aria-selected="false"><span>2</span>Gestaltung</button>
+        <button role="tab" data-tab="text" aria-selected="false"><span>3</span>Text</button>
+        <button role="tab" data-tab="sound" aria-selected="false"><span>4</span>Musik &amp; Kommentar</button>
+        <button role="tab" data-tab="export" aria-selected="false"><span>5</span>Speichern &amp; Teilen</button>
+      </nav>
+
+      <!-- 1 MEDIEN -->
+      <div class="tab" id="tab-media" role="tabpanel">
+        <div>
+          <h2>Fotos und Videos</h2>
+          <p class="sub">Die Reihenfolge der Kacheln ist die Reihenfolge im Clip. Kachel antippen zum Bearbeiten, zum Umsortieren ziehen oder die Pfeile nutzen.</p>
+        </div>
+        <div class="drop" id="drop">
+          <button class="btn primary" id="addBtn">Dateien hinzufügen</button>
+          <p>oder hierher ziehen · JPG, PNG, HEIC (Safari), MP4, MOV</p>
+          <input type="file" id="fileMedia" accept="image/*,video/*" multiple>
+        </div>
+        <div class="bin-meta"><span id="binCount"></span><span id="sampleNote"></span></div>
+        <div class="bin" id="bin"></div>
+        <div class="editor" id="editor" hidden></div>
+      </div>
+
+      <!-- 2 GESTALTUNG -->
+      <div class="tab" id="tab-style" role="tabpanel" hidden>
+        <div class="group">
+          <h3>Format</h3>
+          <div class="chips" data-bind="format">
+            <button data-val="9:16">9:16<small>Reel · Story · TikTok</small></button>
+            <button data-val="4:5">4:5<small>Instagram-Feed</small></button>
+            <button data-val="1:1">1:1<small>Quadrat</small></button>
+            <button data-val="16:9">16:9<small>YouTube · Web</small></button>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Art des Clips</h3>
+          <div class="chips" data-bind="mode">
+            <button data-val="sequence">Abfolge<small>Bild für Bild, Videos dazwischen</small></button>
+            <button data-val="collage">Collage<small>mehrere Bilder gleichzeitig</small></button>
+          </div>
+        </div>
+
+        <div class="group" data-show="mode=sequence">
+          <label class="field"><span>Anzeigedauer pro Foto <output data-out="imgDur"></output></span>
+            <input type="range" id="imgDur" data-bind="imgDur" min="1" max="8" step="0.5"></label>
+          <div><h3>Übergang</h3>
+          <div class="chips" data-bind="transition">
+            <button data-val="fade">Überblenden</button><button data-val="slide">Schieben</button>
+            <button data-val="zoom">Zoom</button><button data-val="cut">Harter Schnitt</button>
+          </div></div>
+          <label class="check"><input type="checkbox" id="kb" data-bind="kenburns"> Fotos langsam zoomen und schwenken</label>
+          <div><h3>Bildausschnitt</h3>
+          <div class="chips" data-bind="fit">
+            <button data-val="cover">Füllen<small>wird zugeschnitten</small></button>
+            <button data-val="contain">Ganz zeigen<small>mit unscharfem Rand</small></button>
+          </div></div>
+        </div>
+
+        <div class="group" data-show="mode=collage">
+          <div><h3>Aufteilung</h3><div class="layouts" id="layouts"></div></div>
+          <div class="two">
+            <label class="field"><span>Länge des Clips <output data-out="collage.total"></output></span>
+              <input type="range" id="colTotal" data-bind="collage.total" min="4" max="60" step="1"></label>
+            <label class="field"><span>Bildwechsel alle <output data-out="collage.cycle"></output></span>
+              <input type="range" id="colCycle" data-bind="collage.cycle" min="1.5" max="8" step="0.5"></label>
+          </div>
+          <label class="field"><span>Rahmenbreite <output data-out="collage.gap"></output></span>
+            <input type="range" id="colGap" data-bind="collage.gap" min="0" max="48" step="2"></label>
+          <div><h3>Rahmenfarbe</h3><div class="chips" data-bind="collage.frame" data-swatches="#FFFFFF,#E9DFCF,#1A211E,#12705F,#C8412B"></div></div>
+          <p class="note">Hast du mehr Bilder als Felder, wechseln die Felder nacheinander durch. Videos laufen in der Collage ohne Ton.</p>
+        </div>
+      </div>
+
+      <!-- 3 TEXT -->
+      <div class="tab" id="tab-text" role="tabpanel" hidden>
+        <div class="group">
+          <label class="field"><span>Titel</span><input type="text" id="tTitle" data-bind="text.title" placeholder="z. B. Herbst am See"></label>
+          <div class="two">
+            <div><h3>Titel zeigen</h3><div class="chips" data-bind="text.titleMode">
+              <button data-val="start">am Anfang</button><button data-val="always">die ganze Zeit</button><button data-val="none">aus</button></div></div>
+            <div><h3>Position</h3><div class="chips" data-bind="text.pos">
+              <button data-val="top">oben</button><button data-val="center">Mitte</button><button data-val="bottom">unten</button></div></div>
+          </div>
+          <label class="field"><span>Schlusstext</span><input type="text" id="tEnd" data-bind="text.end" placeholder="z. B. Link in der Bio"></label>
+          <p class="note">Texte zu einzelnen Bildern trägst du unter „Medien“ beim jeweiligen Bild ein. Sie erscheinen in der Abfolge im unteren Drittel.</p>
+        </div>
+        <hr>
+        <div class="group">
+          <h3>Schriftstil</h3>
+          <div class="chips" data-bind="text.style">
+            <button data-val="bold">Kräftig</button><button data-val="banner">Balken</button>
+            <button data-val="hand">Handschrift</button><button data-val="elegant">Elegant</button>
+          </div>
+          <h3>Farbe</h3>
+          <div class="chips" data-bind="text.color" data-swatches="#FFFFFF,#F5E6C8,#1A211E,#12705F,#C8412B,#F2B33D"></div>
+        </div>
+      </div>
+
+      <!-- 4 TON -->
+      <div class="tab" id="tab-sound" role="tabpanel" hidden>
+        <div class="group">
+          <div>
+            <h2>Musik</h2>
+            <p class="sub">Die Stücke hier werden direkt in der App erzeugt. Sie gehören niemandem und dürfen überall verwendet werden, auch geschäftlich.</p>
+          </div>
+          <div class="tracks" id="tracks"></div>
+          <div class="row" id="upMusicRow">
+            <button class="btn small" id="musicBtn">Eigene Musikdatei wählen</button>
+            <span class="filechip" id="musicName" hidden></span>
+            <input type="file" id="fileMusic" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg">
+          </div>
+          <p class="note">Freie Musik zum Herunterladen gibt es z. B. bei <a href="https://pixabay.com/music/" target="_blank" rel="noopener">Pixabay Music</a>, in der <a href="https://studio.youtube.com/" target="_blank" rel="noopener">YouTube-Audio-Mediathek</a> (unter „Audio-Mediathek“) oder im <a href="https://freemusicarchive.org/" target="_blank" rel="noopener">Free Music Archive</a>. Lies jeweils die Lizenz: Bei „CC BY“ musst du den Künstler im Beitragstext nennen.</p>
+          <div class="two">
+            <label class="field"><span>Lautstärke Musik <output data-out="audio.musicVol"></output></span>
+              <input type="range" id="mVol" data-bind="audio.musicVol" min="0" max="1" step="0.05"></label>
+            <label class="field" data-show="audio.track=upload"><span>Musik startet bei <output data-out="audio.musicOffset"></output></span>
+              <input type="range" id="mOff" data-bind="audio.musicOffset" min="0" max="120" step="1"></label>
+          </div>
+        </div>
+        <hr>
+        <div class="group">
+          <div>
+            <h2>Kommentar</h2>
+            <p class="sub">Sprich direkt ins Mikrofon. Wenn „Clip läuft mit“ an ist, siehst du beim Sprechen die Vorschau und der Kommentar sitzt automatisch passend. Alternativ lädst du eine fertige Sprachaufnahme hoch.</p>
+          </div>
+          <div class="row">
+            <button class="btn small" id="recBtn">Jetzt aufnehmen</button>
+            <span class="rec-state" id="recState"></span>
+            <label class="check"><input type="checkbox" id="recWithClip" checked> Clip läuft mit</label>
+          </div>
+          <div class="row">
+            <button class="btn small" id="voiceBtn">Aufnahme-Datei wählen</button>
+            <span class="filechip" id="voiceName" hidden></span>
+            <button class="btn small danger" id="voiceDel" hidden>Entfernen</button>
+            <input type="file" id="fileVoice" accept="audio/*,.m4a,.mp3,.wav,.aac">
+          </div>
+          <div class="group" id="voiceCtl" hidden>
+            <div class="two">
+              <label class="field"><span>Kommentar beginnt bei <output data-out="audio.voiceStart"></output></span>
+                <input type="range" id="vStart" data-bind="audio.voiceStart" min="0" max="30" step="0.1"></label>
+              <label class="field"><span>Lautstärke Kommentar <output data-out="audio.voiceVol"></output></span>
+                <input type="range" id="vVol" data-bind="audio.voiceVol" min="0" max="1.5" step="0.05"></label>
+            </div>
+            <label class="check"><input type="checkbox" id="duck" data-bind="audio.duck"> Musik leiser, solange gesprochen wird</label>
+            <div class="row"><span class="note" id="voiceInfo"></span><button class="linkbtn" id="fitVoice">Clip-Länge an Kommentar anpassen</button></div>
+          </div>
+        </div>
+        <hr>
+        <div class="group" data-show="mode=sequence">
+          <label class="field"><span>Originalton der Videos <output data-out="audio.clipVol"></output></span>
+            <input type="range" id="cVol" data-bind="audio.clipVol" min="0" max="1" step="0.05"></label>
+        </div>
+      </div>
+
+      <!-- 5 EXPORT -->
+      <div class="tab" id="tab-export" role="tabpanel" hidden>
+        <div class="group">
+          <div>
+            <h2>Video erstellen</h2>
+            <p class="sub">Der Clip wird in Echtzeit aufgenommen, das dauert also so lange wie der Clip selbst. Lass das Fenster dabei offen und im Vordergrund.</p>
+          </div>
+          <div><h3>Qualität</h3><div class="chips" data-bind="quality">
+            <button data-val="1080">Full HD<small>beste Qualität</small></button>
+            <button data-val="720">HD<small>kleinere Datei, schneller</small></button></div></div>
+          <div class="row"><button class="btn primary" id="exportBtn">Video erstellen</button><span class="note" id="expInfo"></span></div>
+          <div class="prog" id="prog" hidden><div id="progBar"></div></div>
+          <div class="result group" id="result" hidden>
+            <video id="outVid" controls playsinline></video>
+            <div class="row"><button class="btn primary" id="shareBtn" hidden>Teilen …</button><button class="btn" id="saveBtn">Herunterladen</button><span class="note" id="outInfo"></span></div>
+            <p class="note" id="saveMsg"></p>
+          </div>
+        </div>
+        <hr>
+        <div class="group">
+          <div>
+            <h2>Veröffentlichen</h2>
+            <p class="sub">Am Handy schickst du das Video mit „Teilen“ direkt an Instagram, TikTok oder in die Fotos. Am Computer lädst du es herunter und auf der Plattform hoch. Den Beitragstext kannst du vorher kopieren.</p>
+          </div>
+          <label class="field"><span>Beitragstext</span><textarea id="postText">Ein Tag draußen – vom ersten Licht bis zum Abendrot.</textarea></label>
+          <label class="field"><span>Hashtags</span><input type="text" id="tags" value="#natur #draussen #reels #wochenende"></label>
+          <div class="row"><button class="btn small" id="copyBtn">Text und Hashtags kopieren</button><span class="note" id="copyMsg"></span></div>
+          <div class="platforms">
+            <div class="plat"><strong>Instagram Reels</strong><span>9:16 · am besten über die Instagram-App hochladen</span><a href="https://www.instagram.com/" target="_blank" rel="noopener">instagram.com öffnen</a></div>
+            <div class="plat"><strong>TikTok</strong><span>9:16 · am Computer über die Upload-Seite</span><a href="https://www.tiktok.com/upload" target="_blank" rel="noopener">TikTok-Upload öffnen</a></div>
+            <div class="plat"><strong>YouTube Shorts</strong><span>9:16 · im YouTube Studio auf „Erstellen“</span><a href="https://studio.youtube.com/" target="_blank" rel="noopener">YouTube Studio öffnen</a></div>
+            <div class="plat"><strong>Facebook</strong><span>9:16 für Reels, 4:5 oder 1:1 für den Feed</span><a href="https://www.facebook.com/" target="_blank" rel="noopener">facebook.com öffnen</a></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="vids" aria-hidden="true"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const FPS = 30;
+const FORMATS = {'9:16':[1080,1920],'4:5':[1080,1350],'1:1':[1080,1080],'16:9':[1920,1080]};
+const LAYOUTS = {
+  'duo-v': {name:'2 übereinander', cells:[[0,0,1,.5],[0,.5,1,.5]]},
+  'duo-h': {name:'2 nebeneinander', cells:[[0,0,.5,1],[.5,0,.5,1]]},
+  'trio':  {name:'1 groß + 2', cells:[[0,0,1,.55],[0,.55,.5,.45],[.5,.55,.5,.45]]},
+  'grid4': {name:'4er-Raster', cells:[[0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]]},
+  'grid6': {name:'6er-Raster', cells:[[0,0,.5,1/3],[.5,0,.5,1/3],[0,1/3,.5,1/3],[.5,1/3,.5,1/3],[0,2/3,.5,1/3],[.5,2/3,.5,1/3]]},
+};
+
+const state = {
+  items: [], sel: null, mode: 'sequence', format: '9:16', quality: '1080',
+  imgDur: 3, transition: 'fade', kenburns: true, fit: 'cover',
+  collage: {layout: 'grid4', total: 12, cycle: 3, gap: 14, frame: '#FFFFFF'},
+  text: {title: 'Ein Tag draußen', titleMode: 'start', pos: 'center', end: 'Mehr davon auf unserem Profil', style: 'bold', color: '#FFFFFF'},
+  audio: {track: 'calm', musicVol: 0.7, upMusic: null, upMusicName: '', musicOffset: 0,
+          voice: null, voiceName: '', voiceStart: 0.5, voiceVol: 1, duck: true, clipVol: 1},
+};
+let uid = 0, playhead = 1.0, playing = false, exporting = false, raf = 0;
+
+const getP = p => p.split('.').reduce((o, k) => o[k], state);
+const setP = (p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], state)[last] = v; };
+
+/* ---------- Canvas ---------- */
+const cv = $('#cv'), g = cv.getContext('2d');
+function setCanvasSize() {
+  const [w, h] = FORMATS[state.format]; const s = state.quality === '720' ? 2 / 3 : 1;
+  const W = Math.round(w * s / 2) * 2, H = Math.round(h * s / 2) * 2;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  $('#fmtBadge').textContent = `${state.format} · ${W}×${H}`;
+  drawSafe();
+}
+function drawSafe() {
+  const s = $('#safe'); s.hidden = !$('#safeToggle').checked;
+  const z = state.format === '9:16' ? {t:14,b:22,l:5,r:16,label:'Bereich ohne App-Bedienelemente'} :
+            state.format === '4:5' ? {t:4,b:4,l:4,r:4,label:'Sicherer Bereich'} :
+            {t:5,b:5,l:5,r:5,label:'Sicherer Bereich'};
+  s.innerHTML = `<i style="top:${z.t}%;bottom:${z.b}%;left:${z.l}%;right:${z.r}%"></i><b style="top:calc(${z.t}% + 6px);left:calc(${z.l}% + 8px)">${z.label}</b>`;
+}
+
+function srcSize(it) { return it.kind === 'video' ? [it.el.videoWidth, it.el.videoHeight] : [it.el.naturalWidth, it.el.naturalHeight]; }
+function rr(x, y, w, h, r) { g.beginPath(); if (g.roundRect && r > 0) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function drawCover(it, x, y, w, h, zoom = 1, px = 0, py = 0) {
+  const [sw, sh] = srcSize(it); if (!sw || !sh) return;
+  const s = Math.max(w / sw, h / sh) * zoom, dw = sw * s, dh = sh * s;
+  g.drawImage(it.el, x + (w - dw) / 2 + px * (dw - w) / 2, y + (h - dh) / 2 + py * (dh - h) / 2, dw, dh);
+}
+function drawMedia(it, x, y, w, h, zoom, px, py) {
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  if (state.fit === 'contain') {
+    const [sw, sh] = srcSize(it);
+    if (sw) {
+      try { g.filter = 'blur(36px) brightness(0.55)'; } catch (e) {}
+      drawCover(it, x, y, w, h, 1.2); g.filter = 'none';
+      if (!('filter' in g)) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x, y, w, h); }
+      const s = Math.min(w / sw, h / sh) * zoom, dw = sw * s, dh = sh * s;
+      g.drawImage(it.el, x + (w - dw) / 2 + px * w * 0.03, y + (h - dh) / 2 + py * h * 0.03, dw, dh);
+    }
+  } else drawCover(it, x, y, w, h, zoom, px, py);
+  g.restore();
+}
+
+/* ---------- Timeline ---------- */
+function itemDur(it) {
+  if (it.kind === 'image') return Math.max(1, it.len || state.imgDur);
+  const avail = Math.max(0.5, (it.dur || 3) - it.trimIn);
+  return Math.max(1, Math.min(it.len || avail, avail));
+}
+function getTL() {
+  if (state.mode === 'collage') return {total: state.collage.total, segs: [], T: 0};
+  const T = state.transition === 'cut' ? 0 : 0.6;
+  let t = 0; const segs = [];
+  state.items.forEach((it, i) => { const d = itemDur(it); const start = i === 0 ? 0 : t - T; segs.push({it, i, start, dur: d}); t = start + d; });
+  return {total: Math.max(t, 1), segs, T};
+}
+
+/* ---------- Videos synchron halten ---------- */
+function syncVideos(t, play, tl) {
+  const used = new Set();
+  if (state.mode === 'sequence') {
+    for (const s of tl.segs) {
+      const it = s.it; if (it.kind !== 'video') continue;
+      const v = it.el; v.loop = false;
+      const local = t - s.start;
+      if (local >= -0.02 && local < s.dur) {
+        used.add(v);
+        const target = Math.min(it.dur - 0.05, it.trimIn + Math.max(0, local));
+        if (play) {
+          if (v.paused) { if (Math.abs(v.currentTime - target) > 0.2) v.currentTime = target; v.play().catch(() => {}); }
+          else if (Math.abs(v.currentTime - target) > 0.45) v.currentTime = target;
+        } else {
+          if (!v.paused) v.pause();
+          if (Math.abs(v.currentTime - target) > 0.04 && !v.seeking) v.currentTime = target;
+        }
+      } else if (play && local < 0 && local > -1.2) {
+        used.add(v); if (!v.paused) v.pause();
+        if (Math.abs(v.currentTime - it.trimIn) > 0.08 && !v.seeking) v.currentTime = it.trimIn;
+      }
+    }
+  } else {
+    collageVisible(t).forEach(it => {
+      if (it.kind !== 'video') return; const v = it.el; used.add(v); v.loop = true;
+      if (play) { if (v.paused) v.play().catch(() => {}); } else if (!v.paused) v.pause();
+    });
+  }
+  state.items.forEach(it => { if (it.kind === 'video' && !used.has(it.el) && !it.el.paused) it.el.pause(); });
+}
+
+/* ---------- Zeichnen ---------- */
+function drawSequence(t, tl) {
+  const W = cv.width, H = cv.height;
+  let act = tl.segs.filter(s => t >= s.start && t < s.start + s.dur);
+  if (!act.length && tl.segs.length) act = [tl.segs[tl.segs.length - 1]];
+  const e = act.length === 2 && tl.T ? clamp((t - act[1].start) / tl.T) : 1;
+  act.forEach((s, k) => {
+    const p = clamp((t - s.start) / s.dur);
+    let zoom = 1, px = 0, py = 0;
+    if (state.kenburns && s.it.kind === 'image') {
+      zoom = 1.05 + 0.1 * (s.i % 2 ? p : 1 - p);
+      px = (s.i % 2 ? 1 : -1) * (p - 0.5) * 0.8; py = ((s.i % 3) - 1) * 0.5 * (p - 0.5);
+    }
+    let x = 0, alpha = 1;
+    const tr = state.transition;
+    if (act.length === 2) {
+      if (k === 0 && tr === 'slide') x = -easeOut(e) * W * 0.35;
+      if (k === 1) {
+        if (tr === 'fade') alpha = e;
+        if (tr === 'slide') x = (1 - easeOut(e)) * W;
+        if (tr === 'zoom') { alpha = e; zoom *= 1 + 0.18 * (1 - easeOut(e)); }
+      }
+    }
+    g.globalAlpha = alpha; drawMedia(s.it, x, 0, W, H, zoom, px, py); g.globalAlpha = 1;
+  });
+}
+
+function collageCellItem(i, t) {
+  const n = state.items.length, cells = LAYOUTS[state.collage.layout].cells, C = cells.length, cyc = state.collage.cycle;
+  if (n <= C) return {it: state.items[i % n], prev: null, mix: 1, local: t, span: state.collage.total};
+  const ph = t + i * cyc / C, k = Math.floor(ph / cyc), local = ph - k * cyc;
+  const it = state.items[(i + k * C) % n];
+  const prev = k > 0 && local < 0.5 ? state.items[(i + (k - 1) * C) % n] : null;
+  return {it, prev, mix: prev ? local / 0.5 : 1, local, span: cyc};
+}
+function collageVisible(t) {
+  if (!state.items.length) return [];
+  const out = new Set(); LAYOUTS[state.collage.layout].cells.forEach((c, i) => { const r = collageCellItem(i, t); out.add(r.it); if (r.prev) out.add(r.prev); });
+  return [...out];
+}
+function drawCollage(t) {
+  const W = cv.width, H = cv.height, sc = W / 1080, gp = state.collage.gap * sc;
+  g.fillStyle = state.collage.frame; g.fillRect(0, 0, W, H);
+  LAYOUTS[state.collage.layout].cells.forEach((c, i) => {
+    const x = gp / 2 + c[0] * (W - gp) + gp / 2, y = gp / 2 + c[1] * (H - gp) + gp / 2;
+    const w = c[2] * (W - gp) - gp, h = c[3] * (H - gp) - gp;
+    const appear = clamp((t - i * 0.12) / 0.45); if (appear <= 0) return;
+    const {it, prev, mix, local, span} = collageCellItem(i, t);
+    const zoom = 1.03 + 0.07 * clamp(local / span);
+    g.save();
+    const s = 0.9 + 0.1 * easeOut(appear);
+    g.translate(x + w / 2, y + h / 2); g.scale(s, s); g.translate(-(x + w / 2), -(y + h / 2));
+    rr(x, y, w, h, gp > 0 ? Math.min(22 * sc, gp * 1.1) : 0); g.clip();
+    g.globalAlpha = appear;
+    if (prev) drawCover(prev, x, y, w, h, 1.1);
+    g.globalAlpha = appear * mix; drawCover(it, x, y, w, h, zoom, (i % 2 ? .3 : -.3) * clamp(local / span));
+    g.restore();
+  });
+}
+
+function fontFor(style, size) {
+  if (style === 'hand') return `700 ${size * 1.3}px Caveat, "Segoe Print", cursive`;
+  if (style === 'elegant') return `italic 600 ${size}px Fraunces, Georgia, serif`;
+  return `800 ${size}px "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif`;
+}
+function wrapLines(text, maxW) {
+  const out = [];
+  String(text).split('\n').forEach(par => {
+    let line = '';
+    par.split(/\s+/).filter(Boolean).forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (g.measureText(test).width > maxW && line) { out.push(line); line = w; } else line = test;
+    });
+    if (line) out.push(line);
+  });
+  return out;
+}
+function lum(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16 & 255, gg = n >> 8 & 255, b = n & 255; return (0.299 * r + 0.587 * gg + 0.114 * b) / 255; }
+function drawBlock(text, size, pos, alpha) {
+  if (alpha <= 0.001) return;
+  const W = cv.width, H = cv.height, st = state.text.style, col = state.text.color;
+  g.save(); g.font = fontFor(st, size);
+  const fs = st === 'hand' ? size * 1.3 : size;
+  const lines = wrapLines(text, W * 0.82); const lh = fs * (st === 'banner' ? 1.32 : 1.12); const bh = lines.length * lh;
+  const lowEdge = state.format === '9:16' ? 0.78 : 0.9;
+  let top = pos === 'top' ? H * 0.13 : pos === 'bottom' ? H * 0.7 - bh : pos === 'lower' ? H * lowEdge - bh : (H - bh) / 2 - H * 0.03;
+  top += (1 - easeOut(clamp(alpha))) * fs * 0.35;
+  g.globalAlpha = clamp(alpha); g.textAlign = 'center'; g.textBaseline = 'middle';
+  lines.forEach((ln, i) => {
+    const y = top + lh * i + lh / 2;
+    if (st === 'banner') {
+      const m = g.measureText(ln).width, px = fs * 0.38;
+      g.fillStyle = col; rr(W / 2 - m / 2 - px, y - lh * 0.46, m + px * 2, lh * 0.92, fs * 0.16); g.fill();
+      g.fillStyle = lum(col) > 0.6 ? '#141A17' : '#FFFFFF';
+    } else {
+      g.shadowColor = lum(col) > 0.5 ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.5)';
+      g.shadowBlur = fs * 0.35; g.shadowOffsetY = fs * 0.04; g.fillStyle = col;
+    }
+    g.fillText(ln, W / 2, y + (st === 'hand' ? fs * 0.04 : 0));
+  });
+  g.restore();
+}
+function window01(t, a, b, f = 0.4) { return t < a || t > b ? 0 : Math.min(clamp((t - a) / f), clamp((b - t) / f)); }
+function drawTexts(t, tl) {
+  const T = state.text, W = cv.width, H = cv.height;
+  const base = Math.min(W, H * 0.62) * (state.format === '16:9' ? 0.11 : 0.088);
+  const endStart = tl.total - Math.min(3, tl.total * 0.35);
+  const endA = T.end.trim() ? clamp((t - endStart) / 0.45) : 0;
+  let titleA = 0;
+  if (T.title.trim() && T.titleMode !== 'none') {
+    titleA = T.titleMode === 'start' ? window01(t, 0.05, Math.min(3.2, tl.total * 0.45), 0.45) : clamp((t - 0.05) / 0.45) * (1 - endA);
+  }
+  if (state.mode === 'sequence') {
+    tl.segs.forEach(s => {
+      if (!s.it.caption || !s.it.caption.trim()) return;
+      let a = window01(t, s.start + 0.3, s.start + s.dur - 0.15, 0.35) * (1 - endA);
+      if (T.pos === 'bottom') a *= 1 - titleA;
+      drawBlock(s.it.caption, base * 0.6, 'lower', a);
+    });
+  }
+  drawBlock(T.title, base, T.pos, titleA);
+  if (endA > 0) {
+    g.fillStyle = `rgba(0,0,0,${0.38 * endA})`; g.fillRect(0, 0, W, H);
+    drawBlock(T.end, base * 0.78, 'center', endA);
+  }
+}
+
+function render(t) {
+  const tl = getTL(), W = cv.width, H = cv.height;
+  syncVideos(t, playing, tl);
+  g.save(); g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  if (!state.items.length) {
+    g.fillStyle = '#8E9A93'; g.font = `600 ${W * 0.045}px Figtree, system-ui, sans-serif`; g.textAlign = 'center';
+    g.fillText('Füge Fotos oder Videos hinzu', W / 2, H / 2); g.restore(); return;
+  }
+  if (state.mode === 'collage') drawCollage(t); else drawSequence(t, tl);
+  drawTexts(t, tl);
+  const out = clamp((t - (tl.total - 0.5)) / 0.5);
+  if (out > 0) { g.fillStyle = `rgba(0,0,0,${out})`; g.fillRect(0, 0, W, H); }
+  g.restore();
+}
+
+/* ---------- Audio ---------- */
+let actx = null, master, musicBus, voiceBus, clipBus, streamDest, session = null, noiseBuf = null;
+function ensureAudio() {
+  if (actx) return;
+  const AC = window.AudioContext || window.webkitAudioContext; actx = new AC();
+  const comp = actx.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 4;
+  master = actx.createGain(); master.gain.value = 0.9; master.connect(comp);
+  comp.connect(actx.destination);
+  streamDest = actx.createMediaStreamDestination(); comp.connect(streamDest);
+  musicBus = actx.createGain(); voiceBus = actx.createGain(); clipBus = actx.createGain();
+  [musicBus, voiceBus, clipBus].forEach(b => b.connect(master));
+  updateGains();
+}
+function updateGains() {
+  if (!actx) return;
+  musicBus.gain.value = state.audio.track === 'none' ? 0 : state.audio.musicVol;
+  voiceBus.gain.value = state.audio.voiceVol;
+  clipBus.gain.value = state.mode === 'collage' ? 0 : state.audio.clipVol;
+}
+function hookVideo(it) { if (actx && it.kind === 'video' && !it.srcNode) { it.srcNode = actx.createMediaElementSource(it.el); it.srcNode.connect(clipBus); } }
+
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function noise(ac) { if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return noiseBuf; }
+function envGain(ac, out, when, a, d, peak) { const gn = ac.createGain(); gn.gain.setValueAtTime(0.0001, when); gn.gain.exponentialRampToValueAtTime(peak, when + a); gn.gain.exponentialRampToValueAtTime(0.0001, when + a + d); gn.connect(out); return gn; }
+function noiseHit(ac, out, when, type, freq, dec, lvl, q = 0.8) {
+  const s = ac.createBufferSource(); s.buffer = noise(ac); const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  s.connect(f); f.connect(envGain(ac, out, when, 0.002, dec, lvl)); s.start(when, Math.random() * 0.5); s.stop(when + dec + 0.05);
+}
+const I = {
+  pluck(ac, out, w, m, vel = .5, dec = .9) {
+    const gn = envGain(ac, out, w, 0.005, dec, 0.16 * vel); const f = ac.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(3400, w); f.frequency.exponentialRampToValueAtTime(650, w + dec); f.connect(gn);
+    const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m); o.connect(f);
+    const o2 = ac.createOscillator(); o2.frequency.value = mtof(m + 12); const g2 = ac.createGain(); g2.gain.value = 0.3; o2.connect(g2); g2.connect(f);
+    [o, o2].forEach(x => { x.start(w); x.stop(w + dec + 0.1); });
+  },
+  pad(ac, out, w, notes, dur, lvl = .03) {
+    const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1000; f.Q.value = 0.3;
+    const gn = ac.createGain(); gn.gain.setValueAtTime(0.0001, w); gn.gain.linearRampToValueAtTime(lvl, w + Math.min(1.2, dur * 0.4));
+    gn.gain.setValueAtTime(lvl, w + dur); gn.gain.linearRampToValueAtTime(0.0001, w + dur + 0.9); f.connect(gn); gn.connect(out);
+    notes.forEach(m => [-7, 7].forEach(c => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = c; o.connect(f); o.start(w); o.stop(w + dur + 1); }));
+  },
+  rhodes(ac, out, w, notes, dur, lvl = .06) {
+    notes.forEach(m => { const gn = envGain(ac, out, w, 0.01, dur + 0.6, lvl);
+      const o = ac.createOscillator(); o.frequency.value = mtof(m); o.connect(gn);
+      const o2 = ac.createOscillator(); o2.frequency.value = mtof(m + 12); const g2 = ac.createGain(); g2.gain.value = 0.12; o2.connect(g2); g2.connect(gn);
+      [o, o2].forEach(x => { x.start(w); x.stop(w + dur + 0.7); }); });
+  },
+  bell(ac, out, w, m, vel = .6) {
+    const f0 = mtof(m), gn = envGain(ac, out, w, 0.004, 2.4, 0.09 * vel);
+    const car = ac.createOscillator(); car.frequency.value = f0; car.connect(gn);
+    const mod = ac.createOscillator(); mod.frequency.value = f0 * 3.5; const mg = ac.createGain();
+    mg.gain.setValueAtTime(f0 * 1.4, w); mg.gain.exponentialRampToValueAtTime(1, w + 1.6); mod.connect(mg); mg.connect(car.frequency);
+    [car, mod].forEach(x => { x.start(w); x.stop(w + 2.5); });
+  },
+  bass(ac, out, w, m, dur, lvl = .2) {
+    const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 480;
+    const gn = ac.createGain(); gn.gain.setValueAtTime(0.0001, w); gn.gain.linearRampToValueAtTime(lvl, w + 0.012);
+    gn.gain.setTargetAtTime(0.0001, w + dur * 0.75, 0.07); f.connect(gn); gn.connect(out);
+    const o = ac.createOscillator(); o.frequency.value = mtof(m); o.connect(f);
+    const o2 = ac.createOscillator(); o2.type = 'triangle'; o2.frequency.value = mtof(m); const g2 = ac.createGain(); g2.gain.value = 0.35; o2.connect(g2); g2.connect(f);
+    [o, o2].forEach(x => { x.start(w); x.stop(w + dur + 0.5); });
+  },
+  kick(ac, out, w, lvl = .8) {
+    const o = ac.createOscillator(); o.frequency.setValueAtTime(140, w); o.frequency.exponentialRampToValueAtTime(42, w + 0.13);
+    const gn = ac.createGain(); gn.gain.setValueAtTime(lvl, w); gn.gain.exponentialRampToValueAtTime(0.001, w + 0.38);
+    o.connect(gn); gn.connect(out); o.start(w); o.stop(w + 0.4);
+  },
+  snare(ac, out, w, lvl = .3) { noiseHit(ac, out, w, 'bandpass', 1800, 0.17, lvl); },
+  clap(ac, out, w, lvl = .28) { [0, .011, .022].forEach((d, i) => noiseHit(ac, out, w + d, 'bandpass', 1250, i === 2 ? .14 : .02, lvl, 1.2)); },
+  hat(ac, out, w, lvl = .06, dec = .045) { noiseHit(ac, out, w, 'highpass', 7200, dec, lvl, 0.5); },
+};
+function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+const TRACKS = {
+  calm: {name: 'Ruhiger Morgen', desc: 'Sanfte Arpeggios · 76 BPM', gen(total) {
+    const b = 60 / 76, bar = 4 * b, ch = [[48,55,64,71],[45,52,60,67],[41,53,57,64],[43,55,59,64]], ev = [];
+    for (let k = 0; k * bar < total + bar; k++) {
+      const c = ch[k % 4], t = k * bar;
+      ev.push({t, f: (ac, o, w) => I.pad(ac, o, w, c, bar, 0.026)});
+      ev.push({t, f: (ac, o, w) => I.bass(ac, o, w, c[0] - 12, bar * 0.9, 0.15)});
+      [0,1,2,3,2,1,2,3].forEach((p, j) => ev.push({t: t + j * b / 2, f: (ac, o, w) => I.pluck(ac, o, w, c[p] + 12, j % 2 ? .45 : .7, 1.4)}));
+    } return ev; }},
+  lofi: {name: 'Lofi am Nachmittag', desc: 'Entspannter Beat · 82 BPM', gen(total) {
+    const b = 60 / 82, bar = 4 * b, sw = b * 0.16, ch = [[50,57,60,65],[43,53,59,62],[48,55,59,64],[45,55,60,64]], ev = [];
+    for (let k = 0; k * bar < total + bar; k++) {
+      const c = ch[k % 4], t = k * bar;
+      ev.push({t, f: (ac, o, w) => I.rhodes(ac, o, w, c.slice(1).map(x => x + 12), b * 1.6, 0.05)});
+      ev.push({t: t + 2.5 * b + sw, f: (ac, o, w) => I.rhodes(ac, o, w, c.slice(1).map(x => x + 12), b * 1.2, 0.035)});
+      ev.push({t, f: (ac, o, w) => I.bass(ac, o, w, c[0] - 12, b * 1.5, 0.2)});
+      ev.push({t: t + 2.5 * b + sw, f: (ac, o, w) => I.bass(ac, o, w, c[0] - 12 + 7, b, 0.16)});
+      [0, 2.5].forEach(x => ev.push({t: t + x * b + (x % 1 ? sw : 0), f: (ac, o, w) => I.kick(ac, o, w, 0.65)}));
+      [1, 3].forEach(x => ev.push({t: t + x * b, f: (ac, o, w) => I.snare(ac, o, w, 0.2)}));
+      for (let j = 0; j < 8; j++) ev.push({t: t + j * b / 2 + (j % 2 ? sw : 0), f: (ac, o, w) => I.hat(ac, o, w, j % 2 ? .03 : .05)});
+    } return ev; }},
+  happy: {name: 'Gute Laune', desc: 'Fröhlich und flott · 116 BPM', gen(total) {
+    const b = 60 / 116, bar = 4 * b, ch = [[55,59,62,67],[50,57,62,66],[52,59,64,67],[48,55,60,64]], ev = [];
+    for (let k = 0; k * bar < total + bar; k++) {
+      const c = ch[k % 4], t = k * bar;
+      [0,2,1,3,2,1,3,2].forEach((p, j) => ev.push({t: t + j * b / 2, f: (ac, o, w) => I.pluck(ac, o, w, c[p] + 12, j % 2 ? .4 : .6, .35)}));
+      for (let j = 0; j < 8; j++) ev.push({t: t + j * b / 2, f: (ac, o, w) => I.bass(ac, o, w, c[0] - 12 + (j % 2 ? 12 : 0), b * 0.4, 0.13)});
+      if (k >= 1) {
+        for (let j = 0; j < 4; j++) ev.push({t: t + j * b, f: (ac, o, w) => I.kick(ac, o, w, 0.7)});
+        [1, 3].forEach(x => ev.push({t: t + x * b, f: (ac, o, w) => I.clap(ac, o, w)}));
+        for (let j = 0; j < 4; j++) ev.push({t: t + j * b + b / 2, f: (ac, o, w) => I.hat(ac, o, w, .07, .06)});
+      }
+    } return ev; }},
+  wide: {name: 'Weite Landschaft', desc: 'Ruhige Flächen, Glockentöne · 60 BPM', gen(total) {
+    const bar = 8, ch = [[41,48,55,57,64],[48,55,62,64,67],[45,52,59,60,64],[43,50,55,62,65]], pent = [72,74,76,79,81,84], r = rng(11), ev = [];
+    for (let k = 0; k * bar < total + bar; k++) {
+      const c = ch[k % 4], t = k * bar;
+      ev.push({t, f: (ac, o, w) => I.pad(ac, o, w, c, bar, 0.022)});
+      ev.push({t, f: (ac, o, w) => I.bass(ac, o, w, c[0] - 12, bar, 0.12)});
+      for (let j = 0; j < 5; j++) if (r() > 0.3) { const m = pent[Math.floor(r() * pent.length)]; ev.push({t: t + j * 1.5 + r() * 0.3, f: (ac, o, w) => I.bell(ac, o, w, m, 0.5 + r() * 0.4)}); }
+    } return ev; }},
+};
+
+function startSession(from) {
+  ensureAudio(); stopSession();
+  state.items.forEach(hookVideo); updateGains();
+  const tl = getTL(), total = tl.total, now = actx.currentTime, when0 = now + 0.06 - from;
+  const sMusic = actx.createGain(), sDuck = actx.createGain(), sVoice = actx.createGain();
+  sMusic.connect(sDuck); sDuck.connect(musicBus); sVoice.connect(voiceBus);
+  const nodes = [];
+  // Ein- und Ausblenden der Musik
+  const gm = sMusic.gain; gm.setValueAtTime(from < 0.05 ? 0.0001 : 1, now);
+  if (from < 0.05) gm.linearRampToValueAtTime(1, when0 + 0.5);
+  if (total - from > 2) gm.setValueAtTime(1, when0 + total - 1.6);
+  gm.linearRampToValueAtTime(0.0001, when0 + total);
+  const A = state.audio;
+  if (A.track === 'upload' && A.upMusic) {
+    const s = actx.createBufferSource(); s.buffer = A.upMusic; s.loop = true; s.connect(sMusic);
+    s.start(now + 0.06, (A.musicOffset + from) % A.upMusic.duration); s.stop(when0 + total + 0.1); nodes.push(s);
+  } else if (TRACKS[A.track]) {
+    TRACKS[A.track].gen(total + 0.5).forEach(e => { if (e.t >= from - 0.02 && e.t < total) e.f(actx, sMusic, Math.max(now + 0.01, when0 + e.t)); });
+  }
+  if (A.voice) {
+    const off = from - A.voiceStart;
+    if (off < A.voice.duration) {
+      const s = actx.createBufferSource(); s.buffer = A.voice; s.connect(sVoice);
+      if (off < 0) s.start(when0 + A.voiceStart); else s.start(now + 0.06, off);
+      s.stop(when0 + total + 0.05); nodes.push(s);
+      if (A.duck) {
+        const a = when0 + A.voiceStart, b = a + A.voice.duration, gd = sDuck.gain;
+        gd.setValueAtTime(1, now);
+        if (a - 0.3 > now) gd.setValueAtTime(1, a - 0.3);
+        gd.linearRampToValueAtTime(0.28, Math.max(now + 0.02, a));
+        gd.setValueAtTime(0.28, Math.max(now + 0.03, b));
+        gd.linearRampToValueAtTime(1, Math.max(now + 0.04, b) + 0.6);
+      }
+    }
+  }
+  session = {nodes, gains: [sMusic, sDuck, sVoice], anchor: when0};
+}
+function stopSession() {
+  if (!session) return;
+  session.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
+  session.gains.forEach(x => { try { x.disconnect(); } catch (e) {} });
+  session = null;
+}
+
+/* ---------- Abspielen ---------- */
+const ICON_PLAY = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3.5v13l11-6.5z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="4.5" y="3.5" width="4" height="13" rx="1"/><rect x="11.5" y="3.5" width="4" height="13" rx="1"/></svg>';
+let onEnd = null;
+function play(from) {
+  if (!state.items.length) return;
+  ensureAudio(); actx.resume();
+  const tl = getTL(); if (from == null) from = playhead >= tl.total - 0.05 ? 0 : playhead;
+  playhead = from; startSession(from); playing = true; updateTransport(); cancelAnimationFrame(raf); loop();
+}
+function pause() {
+  playing = false; stopSession(); cancelAnimationFrame(raf);
+  state.items.forEach(it => { if (it.kind === 'video') it.el.pause(); });
+  updateTransport(); render(playhead);
+}
+function loop() {
+  if (!playing) return;
+  const tl = getTL();
+  playhead = Math.max(0, actx.currentTime - session.anchor);
+  if (playhead >= tl.total) {
+    playhead = tl.total; render(tl.total - 0.001); pause();
+    if (onEnd) { const f = onEnd; onEnd = null; f(); }
+    return;
+  }
+  render(playhead); updateScrub(tl);
+  raf = requestAnimationFrame(loop);
+}
+function restartIfPlaying() { if (playing && !exporting) play(Math.min(playhead, getTL().total - 0.05)); }
+function tc(t) { const f = Math.floor(t * FPS + 1e-6); const s = Math.floor(f / FPS); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}:${String(f % FPS).padStart(2, '0')}`; }
+function fmtS(s) { return s.toFixed(1).replace('.', ',') + ' s'; }
+function updateScrub(tl = getTL()) {
+  $('#scrub').value = Math.round(clamp(playhead / tl.total) * 1000);
+  $('#tc').textContent = `${tc(playhead)} / ${tc(tl.total)}`;
+}
+function updateTransport() {
+  const b = $('#playBtn'); b.innerHTML = playing ? ICON_PAUSE : ICON_PLAY; b.setAttribute('aria-label', playing ? 'Pause' : 'Abspielen');
+  b.disabled = exporting; $('#scrub').disabled = exporting;
+}
+$('#playBtn').onclick = () => playing ? pause() : play();
+$('#scrub').oninput = e => {
+  const tl = getTL(); playhead = e.target.value / 1000 * tl.total;
+  if (playing) play(playhead); else { render(playhead); updateScrub(tl); }
+};
+
+/* ---------- Medien laden ---------- */
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 5200); }
+function thumbFrom(el, sw, sh) {
+  const c = document.createElement('canvas'); c.width = c.height = 180; const x = c.getContext('2d');
+  const s = Math.max(180 / sw, 180 / sh); x.drawImage(el, (180 - sw * s) / 2, (180 - sh * s) / 2, sw * s, sh * s);
+  return c.toDataURL('image/jpeg', 0.75);
+}
+async function addImage(file) {
+  const url = URL.createObjectURL(file); const img = new Image(); img.src = url;
+  try { await img.decode(); } catch (e) { toast(`„${file.name}“ ließ sich nicht öffnen. HEIC-Fotos gehen nur in Safari – sonst vorher als JPG exportieren.`); return null; }
+  return {id: ++uid, kind: 'image', name: file.name, el: img, url, caption: '', len: null, thumb: thumbFrom(img, img.naturalWidth, img.naturalHeight)};
+}
+async function addVideo(file) {
+  const url = URL.createObjectURL(file); const v = document.createElement('video');
+  v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.src = url; $('#vids').appendChild(v);
+  const ok = await new Promise(res => { const to = setTimeout(() => res(false), 20000); v.onloadeddata = () => { clearTimeout(to); res(true); }; v.onerror = () => { clearTimeout(to); res(false); }; });
+  if (!ok || !v.videoWidth) { v.remove(); toast(`„${file.name}“ lässt sich in diesem Browser nicht abspielen. Versuche Safari oder ein MP4.`); return null; }
+  const dur = isFinite(v.duration) ? v.duration : 5;
+  const it = {id: ++uid, kind: 'video', name: file.name, el: v, url, dur, trimIn: 0, len: Math.min(dur, 8), caption: '', thumb: ''};
+  it.thumb = thumbFrom(v, v.videoWidth, v.videoHeight);
+  if (actx) hookVideo(it);
+  return it;
+}
+async function addFiles(files) {
+  files = [...files]; if (!files.length) return;
+  const hadSamples = state.items.some(i => i.sample);
+  $('#addBtn').disabled = true; $('#addBtn').textContent = 'Wird geladen …';
+  const added = [];
+  for (const f of files) {
+    let it = null;
+    if (/^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name)) it = await addImage(f);
+    else if (/^video\//.test(f.type) || /\.(mp4|mov|m4v|webm)$/i.test(f.name)) it = await addVideo(f);
+    else toast(`„${f.name}“ ist weder Foto noch Video.`);
+    if (it) added.push(it);
+  }
+  $('#addBtn').disabled = false; $('#addBtn').textContent = 'Dateien hinzufügen';
+  if (!added.length) return;
+  if (hadSamples) state.items = state.items.filter(i => !i.sample);
+  state.items.push(...added); state.sel = added[0].id;
+  changed('items'); playhead = Math.min(1, getTL().total / 2); render(playhead); updateScrub();
+}
+$('#addBtn').onclick = () => $('#fileMedia').click();
+$('#fileMedia').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(n => drop.addEventListener(n, e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); drop.classList.add('over'); } }));
+['dragleave', 'drop'].forEach(n => drop.addEventListener(n, () => drop.classList.remove('over')));
+drop.addEventListener('drop', e => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+
+/* ---------- Beispielbilder ---------- */
+function makeSample(i) {
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1440; const x = c.getContext('2d'), W = 1080, H = 1440;
+  const P = [
+    {sky:['#8FB3D4','#F7D1A8'], sun:['#FFE9B8',.68,.46,90], hills:['#9DB59A','#6E8E73','#45634F'], name:'Früh am Morgen'},
+    {sky:['#BFD9CB','#E7F0E6'], sun:['#FFFFFF',.3,.2,60], hills:['#7FA48F','#4F7A62','#2D4C3A'], trees:true, name:'Mittag im Wald'},
+    {sky:['#6FA6D3','#D9EAF3'], sun:['#FFF6DA',.5,.22,70], hills:['#8AA2B3','#627F8E'], lake:true, name:'Am See'},
+    {sky:['#2F2B52','#F4B26B'], sun:['#FFC07A',.42,.58,110], hills:['#6B4152','#422A3B','#211826'], name:'Abendrot'},
+  ][i];
+  const sky = x.createLinearGradient(0, 0, 0, H * .7); sky.addColorStop(0, P.sky[0]); sky.addColorStop(1, P.sky[1]); x.fillStyle = sky; x.fillRect(0, 0, W, H);
+  const [sc, sx, sy, sr] = P.sun; const sg = x.createRadialGradient(W * sx, H * sy, 0, W * sx, H * sy, sr * 3.2);
+  sg.addColorStop(0, sc); sg.addColorStop(.3, sc + 'AA'); sg.addColorStop(1, sc + '00'); x.fillStyle = sg; x.fillRect(0, 0, W, H);
+  x.fillStyle = sc; x.beginPath(); x.arc(W * sx, H * sy, sr, 0, 7); x.fill();
+  P.hills.forEach((col, k) => {
+    const base = H * (.52 + k * .12), amp = 60 - k * 8; x.fillStyle = col; x.beginPath(); x.moveTo(0, H);
+    for (let px = 0; px <= W; px += 8) x.lineTo(px, base + Math.sin(px * .004 + k * 2 + i) * amp + Math.sin(px * .013 + k) * amp * .35);
+    x.lineTo(W, H); x.fill();
+    if (P.trees && k === 2) { x.fillStyle = '#21392B'; for (let t = 0; t < 16; t++) { const tx = t * 72 + 20, ty = base + 10 + Math.sin(t * 1.7) * 30, th = 170 + (t * 37 % 90); x.beginPath(); x.moveTo(tx, ty - th); x.lineTo(tx - 38, ty + 10); x.lineTo(tx + 38, ty + 10); x.fill(); } }
+  });
+  if (P.lake) { const lg = x.createLinearGradient(0, H * .66, 0, H); lg.addColorStop(0, '#5D93B4'); lg.addColorStop(1, '#2A5872'); x.fillStyle = lg; x.fillRect(0, H * .66, W, H * .34);
+    x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; for (let l = 0; l < 14; l++) { const ly = H * .69 + l * 30, lx = (l * 173) % W; x.beginPath(); x.moveTo(lx, ly); x.lineTo(lx + 120 + l * 6, ly); x.stroke(); } }
+  x.fillStyle = 'rgba(255,255,255,.75)'; x.font = '600 30px Figtree, system-ui, sans-serif'; x.fillText('Beispielbild', 36, H - 40);
+  return new Promise(res => { const img = new Image(); img.onload = () => res({id: ++uid, kind: 'image', name: P.name + ' (Beispiel)', el: img, caption: P.name, len: null, sample: true, thumb: thumbFrom(img, W, H)}); img.src = c.toDataURL('image/jpeg', .88); });
+}
+
+/* ---------- Medien-Liste & Editor ---------- */
+function renderBin() {
+  const bin = $('#bin'); bin.innerHTML = '';
+  state.items.forEach((it, i) => {
+    const d = document.createElement('button'); d.type = 'button';
+    d.className = 'tile' + (state.sel === it.id ? ' sel' : ''); d.draggable = true; d.dataset.id = it.id;
+    d.setAttribute('aria-label', `${i + 1}: ${it.name}`);
+    d.innerHTML = `<img src="${it.thumb}" alt=""><span class="num">${i + 1}</span>${it.kind === 'video' ? `<span class="kind">▶ ${fmtS(itemDur(it))}</span>` : ''}`;
+    d.onclick = () => { state.sel = it.id; renderBin(); renderEditor(); jumpTo(it); };
+    d.ondragstart = e => { e.dataTransfer.setData('text/plain', it.id); e.dataTransfer.effectAllowed = 'move'; };
+    d.ondragover = e => { if (!e.dataTransfer.types.includes('Files')) { e.preventDefault(); d.classList.add('drag-over'); } };
+    d.ondragleave = () => d.classList.remove('drag-over');
+    d.ondrop = e => { const id = +e.dataTransfer.getData('text/plain'); if (!id) return; e.preventDefault(); e.stopPropagation(); d.classList.remove('drag-over');
+      const from = state.items.findIndex(x => x.id === id), to = state.items.findIndex(x => x.id === it.id);
+      if (from < 0 || from === to) return; const [m] = state.items.splice(from, 1); state.items.splice(to, 0, m); changed('items'); };
+    bin.appendChild(d);
+  });
+  const n = state.items.length, nv = state.items.filter(i => i.kind === 'video').length;
+  $('#binCount').textContent = n ? `${n} ${n === 1 ? 'Datei' : 'Dateien'}${nv ? ` · davon ${nv} Video${nv > 1 ? 's' : ''}` : ''}` : 'Noch keine Dateien';
+  const samples = state.items.some(i => i.sample);
+  $('#sampleNote').innerHTML = samples ? 'Beispielbilder · werden ersetzt, sobald du eigene Dateien hinzufügst' : '';
+}
+function jumpTo(it) {
+  if (state.mode !== 'sequence') return;
+  const s = getTL().segs.find(x => x.it === it); if (!s) return;
+  playhead = s.start + Math.min(0.8, s.dur / 2); if (playing) play(playhead); else { render(playhead); updateScrub(); }
+}
+function renderEditor() {
+  const it = state.items.find(x => x.id === state.sel), ed = $('#editor');
+  if (!it) { ed.hidden = true; return; } ed.hidden = false;
+  const idx = state.items.indexOf(it);
+  let body = '';
+  if (it.kind === 'image') {
+    body = `<label class="field"><span>Anzeigedauer dieses Fotos <output id="edLenOut">${fmtS(itemDur(it))}${it.len ? '' : ' (Standard)'}</output></span>
+      <input type="range" id="edLen" min="1" max="12" step="0.5" value="${itemDur(it)}"></label>`;
+  } else {
+    const max = Math.max(0, it.dur - 0.5);
+    body = `<div class="two"><label class="field"><span>Startet bei <output id="edInOut">${fmtS(it.trimIn)}</output></span>
+      <input type="range" id="edIn" min="0" max="${max.toFixed(1)}" step="0.1" value="${it.trimIn}"></label>
+      <label class="field"><span>Länge <output id="edLenOut">${fmtS(itemDur(it))} von ${fmtS(it.dur)}</output></span>
+      <input type="range" id="edLen" min="1" max="${Math.max(1, it.dur - it.trimIn).toFixed(1)}" step="0.1" value="${itemDur(it)}"></label></div>`;
+  }
+  ed.innerHTML = `<div class="ed-head"><strong>${idx + 1}. ${esc(it.name)}</strong>
+    <div class="ed-actions"><button class="btn small" data-act="left" aria-label="Nach vorn">←</button><button class="btn small" data-act="right" aria-label="Nach hinten">→</button><button class="btn small danger" data-act="del">Entfernen</button></div></div>
+    ${body}
+    <label class="field"><span>Text zu diesem ${it.kind === 'video' ? 'Video' : 'Foto'}</span><input type="text" id="edCap" value="${esc(it.caption || '')}" placeholder="z. B. Frühstück auf der Terrasse"></label>
+    ${state.mode === 'collage' ? '<p class="note">Dauer und Texte einzelner Bilder gelten nur in der Abfolge. Du bist gerade im Collage-Modus.</p>' : ''}`;
+  ed.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const i = state.items.indexOf(it), a = b.dataset.act;
+    if (a === 'del') { state.items.splice(i, 1); if (it.kind === 'video') it.el.remove(); state.sel = state.items[Math.min(i, state.items.length - 1)]?.id ?? null; }
+    else { const j = a === 'left' ? i - 1 : i + 1; if (j < 0 || j >= state.items.length) return; [state.items[i], state.items[j]] = [state.items[j], state.items[i]]; }
+    changed('items');
+  });
+  const len = $('#edLen'), inp = $('#edIn');
+  len.oninput = () => { it.len = +len.value; $('#edLenOut').textContent = it.kind === 'video' ? `${fmtS(itemDur(it))} von ${fmtS(it.dur)}` : fmtS(itemDur(it)); changed('items', true); jumpTo(it); };
+  if (inp) inp.oninput = () => { it.trimIn = +inp.value; $('#edInOut').textContent = fmtS(it.trimIn); const m = Math.max(1, it.dur - it.trimIn); len.max = m.toFixed(1); if (it.len > m) it.len = m; len.value = itemDur(it); $('#edLenOut').textContent = `${fmtS(itemDur(it))} von ${fmtS(it.dur)}`; changed('items', true); jumpTo(it); };
+  $('#edCap').oninput = e => { it.caption = e.target.value; if (!playing) render(playhead); };
+}
+
+/* ---------- Einstellungen binden ---------- */
+function fmtOut(path, v) {
+  if (/Vol$/.test(path)) return Math.round(v * 100) + ' %';
+  if (path === 'collage.gap') return v ? v + ' px' : 'ohne';
+  return fmtS(+v);
+}
+function syncControls() {
+  $$('[data-bind]').forEach(el => {
+    const p = el.dataset.bind, v = getP(p);
+    if (el.classList.contains('chips')) el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === String(v))));
+    else if (el.type === 'checkbox') el.checked = !!v;
+    else if (document.activeElement !== el) el.value = v;
+  });
+  $$('[data-out]').forEach(o => o.textContent = fmtOut(o.dataset.out, getP(o.dataset.out)));
+  $$('[data-show]').forEach(el => { const [p, v] = el.dataset.show.split('='); el.hidden = String(getP(p)) !== v; });
+  $$('#layouts button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === state.collage.layout)));
+  $$('#tracks button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === state.audio.track)));
+  const A = state.audio;
+  $('#musicName').hidden = !A.upMusicName; $('#musicName').textContent = A.upMusicName;
+  if (A.upMusic) $('#mOff').max = Math.max(0, Math.floor(A.upMusic.duration - 5));
+  $('#voiceName').hidden = $('#voiceDel').hidden = !A.voice; $('#voiceName').textContent = A.voiceName; $('#voiceCtl').hidden = !A.voice;
+  const tl = getTL();
+  if (A.voice) {
+    $('#vStart').max = Math.max(0, Math.floor(tl.total - 1));
+    const end = A.voiceStart + A.voice.duration;
+    $('#voiceInfo').textContent = `Aufnahme ${fmtS(A.voice.duration)} · Clip ${fmtS(tl.total)}` + (end > tl.total - 0.3 ? ' · der Kommentar ist länger als der Clip' : '');
+  }
+  $('#sumLine').textContent = state.items.length ? `${state.mode === 'collage' ? 'Collage' : 'Abfolge'} · ${fmtS(tl.total)} · ${state.audio.track === 'none' ? 'ohne Musik' : state.audio.track === 'upload' ? 'eigene Musik' : TRACKS[state.audio.track].name}` : '';
+  $('#expInfo').textContent = state.items.length ? `Dauer etwa ${fmtS(tl.total)}` : 'Erst Fotos oder Videos hinzufügen';
+  $('#exportBtn').disabled = !state.items.length || exporting;
+}
+function changed(path, soft) {
+  if (path === 'format' || path === 'quality') setCanvasSize();
+  if (path === 'items') { renderBin(); renderEditor(); }
+  if (path === 'mode') renderEditor();
+  updateGains(); syncControls();
+  const tl = getTL(); if (playhead > tl.total) playhead = Math.max(0, tl.total - 0.5);
+  const live = /^text\.|^collage\.(gap|frame)|kenburns|fit|Vol$|duck/.test(path) || soft;
+  if (playing && !live) restartIfPlaying();
+  else if (!playing) { render(playhead); updateScrub(tl); }
+}
+function bindAll() {
+  $$('.chips[data-swatches]').forEach(c => c.innerHTML = c.dataset.swatches.split(',').map(h => `<button class="swatch" data-val="${h}" style="background:${h}" aria-label="Farbe ${h}"></button>`).join(''));
+  $('#layouts').innerHTML = Object.entries(LAYOUTS).map(([k, L]) => {
+    const cells = L.cells.map(c => `<i style="grid-column:${Math.round(c[0] * 6) + 1} / span ${Math.round(c[2] * 6)};grid-row:${Math.round(c[1] * 6) + 1} / span ${Math.round(c[3] * 6)}"></i>`).join('');
+    return `<button data-val="${k}"><span class="lay" style="grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(6,1fr)">${cells}</span>${L.name}</button>`;
+  }).join('');
+  $$('#layouts button').forEach(b => b.onclick = () => { state.collage.layout = b.dataset.val; changed('collage.layout'); });
+  $('#tracks').innerHTML = Object.entries(TRACKS).map(([k, t]) => `<button data-val="${k}"><strong>${t.name}</strong><span>${t.desc}</span></button>`).join('') +
+    `<button data-val="upload"><strong>Eigene Musik</strong><span>Datei von deinem Gerät</span></button><button data-val="none"><strong>Keine Musik</strong><span>nur Kommentar oder Originalton</span></button>`;
+  $$('#tracks button').forEach(b => b.onclick = () => { if (b.dataset.val === 'upload' && !state.audio.upMusic) { $('#fileMusic').click(); return; } state.audio.track = b.dataset.val; changed('audio.track'); });
+  $$('.chips[data-bind]').forEach(c => c.addEventListener('click', e => { const b = e.target.closest('button[data-val]'); if (!b) return; setP(c.dataset.bind, b.dataset.val); changed(c.dataset.bind); }));
+  $$('input[data-bind]').forEach(el => el.addEventListener('input', () => {
+    const v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+    setP(el.dataset.bind, v); changed(el.dataset.bind);
+  }));
+  $$('.steps button').forEach(b => b.onclick = () => {
+    $$('.steps button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    $$('.tab').forEach(t => t.hidden = t.id !== 'tab-' + b.dataset.tab);
+  });
+  $('#safeToggle').onchange = drawSafe;
+}
+
+/* ---------- Audio-Dateien ---------- */
+async function readAudio(file) { ensureAudio(); return await actx.decodeAudioData(await file.arrayBuffer()); }
+$('#musicBtn').onclick = () => $('#fileMusic').click();
+$('#fileMusic').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { state.audio.upMusic = await readAudio(f); state.audio.upMusicName = f.name; state.audio.track = 'upload'; state.audio.musicOffset = 0; changed('audio.track'); }
+  catch (err) { toast('Diese Musikdatei lässt sich nicht lesen. MP3, M4A oder WAV funktionieren am besten.'); }
+};
+$('#voiceBtn').onclick = () => $('#fileVoice').click();
+$('#fileVoice').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { state.audio.voice = await readAudio(f); state.audio.voiceName = f.name; changed('audio.voice'); }
+  catch (err) { toast('Diese Aufnahme lässt sich nicht lesen. Sprachmemos (M4A), MP3 oder WAV funktionieren am besten.'); }
+};
+$('#voiceDel').onclick = () => { state.audio.voice = null; state.audio.voiceName = ''; changed('audio.voice'); };
+$('#fitVoice').onclick = () => {
+  const A = state.audio; if (!A.voice) return;
+  const need = A.voiceStart + A.voice.duration + 1.2;
+  if (state.mode === 'collage') { state.collage.total = Math.min(60, Math.ceil(need)); }
+  else {
+    const tl = getTL(), imgs = state.items.filter(i => i.kind === 'image' && !i.len), fixed = tl.total - imgs.length * state.imgDur;
+    if (!imgs.length) { toast('Alle Fotos haben eine eigene Dauer. Passe sie unter „Medien“ an.'); return; }
+    state.imgDur = clamp(Math.round((need - fixed) / imgs.length * 2) / 2, 1, 12);
+  }
+  changed('imgDur');
+};
+
+/* ---------- Export ---------- */
+let outBlob = null, outExt = 'mp4';
+function pickMime() {
+  const c = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  return c.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+}
+$('#exportBtn').onclick = async () => {
+  if (!state.items.length) return;
+  if (!window.MediaRecorder || !cv.captureStream) { toast('Dieser Browser kann keine Videos aufnehmen. Nimm bitte ein aktuelles Chrome oder Safari.'); return; }
+  pause(); ensureAudio(); await actx.resume(); state.items.forEach(hookVideo);
+  const mime = pickMime(); outExt = mime.includes('mp4') ? 'mp4' : 'webm';
+  const vs = cv.captureStream(FPS);
+  const stream = new MediaStream([...vs.getVideoTracks(), ...streamDest.stream.getAudioTracks()]);
+  let rec;
+  try { rec = new MediaRecorder(stream, {mimeType: mime || undefined, videoBitsPerSecond: state.quality === '1080' ? 10e6 : 5e6, audioBitsPerSecond: 160000}); }
+  catch (e) { toast('Die Aufnahme ließ sich nicht starten. Versuche die Qualität „HD“.'); return; }
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  exporting = true; document.body.classList.add('recording'); updateTransport(); syncControls();
+  $('#prog').hidden = false; $('#result').hidden = true; $('#exportBtn').textContent = 'Wird aufgenommen …';
+  const total = getTL().total;
+  const tick = setInterval(() => { $('#progBar').style.width = (clamp(playhead / total) * 100).toFixed(1) + '%'; }, 200);
+  rec.onstop = () => {
+    clearInterval(tick); exporting = false; document.body.classList.remove('recording');
+    $('#progBar').style.width = '100%'; setTimeout(() => $('#prog').hidden = true, 600);
+    $('#exportBtn').textContent = 'Neu erstellen'; updateTransport(); syncControls();
+    outBlob = new Blob(chunks, {type: mime || 'video/webm'});
+    const v = $('#outVid'); if (v.src) URL.revokeObjectURL(v.src); v.src = URL.createObjectURL(outBlob);
+    $('#result').hidden = false;
+    $('#outInfo').textContent = `${outExt.toUpperCase()} · ${(outBlob.size / 1048576).toFixed(1).replace('.', ',')} MB · ${fmtS(total)}`;
+    $('#saveMsg').textContent = outExt === 'webm' ? 'Dieser Browser liefert WebM. Instagram nimmt das nicht an – für MP4 nimm Safari oder ein aktuelles Chrome.' : '';
+    $('#shareBtn').hidden = !canShareFiles();
+  };
+  playhead = 0; render(0);
+  rec.start(250);
+  onEnd = () => setTimeout(() => { try { rec.stop(); } catch (e) {} }, 250);
+  setTimeout(() => play(0), 120);
+};
+function fileName() {
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  return `clip-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.${outExt}`;
+}
+function canShareFiles() {
+  try { return !!(navigator.canShare && navigator.canShare({files: [new File(['x'], 'x.mp4', {type: 'video/mp4'})]})); } catch (e) { return false; }
+}
+function postCopy() { return `${$('#postText').value.trim()}\n\n${$('#tags').value.trim()}`; }
+$('#saveBtn').onclick = () => {
+  if (!outBlob) return;
+  const name = fileName(), url = URL.createObjectURL(outBlob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  $('#saveMsg').textContent = `Heruntergeladen als ${name}.`;
+};
+$('#shareBtn').onclick = async () => {
+  if (!outBlob) return;
+  const file = new File([outBlob], fileName(), {type: outBlob.type || 'video/mp4'});
+  try { await navigator.clipboard.writeText(postCopy()); } catch (e) {}
+  try { await navigator.share({files: [file], text: postCopy()}); $('#saveMsg').textContent = 'Geteilt. Der Beitragstext liegt zusätzlich in der Zwischenablage.'; }
+  catch (e) { if (e && e.name !== 'AbortError') $('#saveMsg').textContent = 'Teilen hat nicht geklappt. Nutze „Herunterladen“.'; }
+};
+
+/* ---------- Kommentar direkt aufnehmen ---------- */
+let micRec = null, micStream = null, micTimer = 0;
+function stopMic() { if (micRec && micRec.state !== 'inactive') micRec.stop(); }
+$('#recBtn').onclick = async () => {
+  if (micRec) { stopMic(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { toast('Dieser Browser kann nicht aufnehmen. Nimm Safari oder Chrome.'); return; }
+  try { micStream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); }
+  catch (e) { toast('Kein Zugriff auf das Mikrofon. Erlaube den Zugriff in den Einstellungen deines Browsers.'); return; }
+  const mt = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(m => MediaRecorder.isTypeSupported(m));
+  const chunks = [], withClip = $('#recWithClip').checked && state.items.length > 0;
+  micRec = new MediaRecorder(micStream, mt ? {mimeType: mt} : undefined);
+  micRec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  micRec.onstop = async () => {
+    clearInterval(micTimer); micStream.getTracks().forEach(t => t.stop()); micRec = null;
+    $('#recBtn').textContent = 'Jetzt aufnehmen'; $('#recBtn').classList.remove('live'); $('#recState').textContent = '';
+    if (withClip) { onEnd = null; if (playing) pause(); master.gain.value = 0.9; }
+    try {
+      ensureAudio();
+      const buf = await actx.decodeAudioData(await new Blob(chunks).arrayBuffer());
+      state.audio.voice = buf; state.audio.voiceName = 'Aufnahme ' + new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+      if (withClip) state.audio.voiceStart = 0;
+      changed('audio.voice');
+    } catch (e) { toast('Die Aufnahme ließ sich nicht verarbeiten. Bitte noch einmal versuchen.'); }
+  };
+  ensureAudio(); await actx.resume();
+  if (withClip) { state.audio.voice = null; master.gain.value = 0; }
+  micRec.start(200);
+  const t0 = Date.now();
+  $('#recBtn').textContent = 'Aufnahme beenden'; $('#recBtn').classList.add('live');
+  micTimer = setInterval(() => { $('#recState').textContent = '● ' + fmtS((Date.now() - t0) / 1000); }, 100);
+  if (withClip) { play(0); onEnd = stopMic; }
+};
+$('#copyBtn').onclick = async () => {
+  const txt = postCopy();
+  try { await navigator.clipboard.writeText(txt); $('#copyMsg').textContent = 'Kopiert.'; }
+  catch (e) { const t = $('#postText'); t.focus(); t.select(); $('#copyMsg').textContent = 'Bitte manuell kopieren (Text ist markiert).'; }
+  setTimeout(() => $('#copyMsg').textContent = '', 3000);
+};
+
+/* ---------- Start ---------- */
+bindAll(); setCanvasSize(); updateTransport();
+(async () => {
+  for (let i = 0; i < 4; i++) state.items.push(await makeSample(i));
+  state.sel = null; renderBin(); syncControls(); render(playhead); updateScrub();
+  try {
+    await Promise.all(['800 40px "Bricolage Grotesque"', '700 40px Caveat', 'italic 600 40px Fraunces', '600 20px Figtree'].map(f => document.fonts.load(f)));
+  } catch (e) {}
+  if (!playing) render(playhead);
+})();
+document.fonts && document.fonts.ready.then(() => { if (!playing) render(playhead); });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+</script>
+</body>
+</html>

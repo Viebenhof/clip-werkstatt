@@ -1,0 +1,16 @@
+{
+  "name": "Clip-Werkstatt",
+  "short_name": "Clips",
+  "description": "Fotos und Videos zu kurzen Clips mit Text, Kommentar und Musik für Social Media verarbeiten.",
+  "lang": "de",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ECEFEA",
+  "theme_color": "#12705F",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
